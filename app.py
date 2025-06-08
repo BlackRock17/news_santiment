@@ -18,7 +18,7 @@ def index():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_text():
-    """API endpoint за анализ на текст"""
+    """API endpoint за анализ на текст с интегриран summarizer"""
     try:
         # Вземаме текста от POST заявката
         data = request.get_json()
@@ -27,7 +27,7 @@ def analyze_text():
         if not text:
             return jsonify({'error': 'Няма предоставен текст'}), 400
 
-        # Правим анализа
+        # Правим пълен анализ с интегрирания summarizer
         start_time = time.time()
         result = crypto_analyzer.analyze_crypto_text(text)
         analysis_time = round(time.time() - start_time, 2)
@@ -48,7 +48,7 @@ def analyze_text():
 
         # Почистваме резултата
         clean_result = convert_floats(result)
-        clean_result['analysis_time'] = analysis_time
+        clean_result['total_analysis_time'] = analysis_time
 
         return jsonify(clean_result)
 
@@ -60,12 +60,17 @@ def analyze_text():
 @app.route('/health')
 def health_check():
     """Проверка дали приложението работи"""
-    return jsonify({'status': 'OK', 'message': 'Crypto Analyzer е готов!'})
+    return jsonify({
+        'status': 'OK',
+        'message': 'Crypto Analyzer е готов!',
+        'summarization_threshold': crypto_analyzer.text_summarizer.min_words_for_summary
+    })
 
 
 if __name__ == '__main__':
     print("\n" + "=" * 50)
-    print("CRYPTO SENTIMENT ANALYZER")
+    print("CRYPTO SENTIMENT ANALYZER WITH SUMMARIZATION")
     print("Отвори браузър на: http://127.0.0.1:5000")
+    print(f"Summarization лимит: {crypto_analyzer.text_summarizer.min_words_for_summary}+ думи")
     print("=" * 50)
     app.run(debug=True, host='127.0.0.1', port=5000)
