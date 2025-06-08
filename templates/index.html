@@ -32,7 +32,7 @@
 
         textarea {
             width: 100%;
-            height: 150px;
+            height: 200px;
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 5px;
@@ -107,12 +107,52 @@
             border-radius: 5px;
             margin-top: 10px;
         }
+
+        .summarization-info {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .summarization-info h4 {
+            margin-top: 0;
+            color: #0c5460;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🚀 Crypto Sentiment Analyzer</h1>
         <p>Анализирай sentiment и entities в криптовалутни текстове</p>
+        <p><small>Автоматично резюмиране за дълги статии (250+ думи)</small></p>
     </div>
 
     <div class="input-section">
@@ -120,7 +160,9 @@
         <textarea id="textInput" placeholder="Постави тук криптовалутна статия или новина за анализ...
 
 Примерен текст:
-Bitcoin достигна нови месечни върхове днес, докато институционалните инвеститори продължават да показват силен интерес. Elon Musk коментира положително развитието на пазара..."></textarea>
+Bitcoin достигна нови месечни върхове днес, докато институционалните инвеститори продължават да показват силен интерес. Elon Musk коментира положително развитието на пазара...
+
+За текстове над 250 думи ще се направи автоматично резюме преди sentiment анализ."></textarea>
 
         <br>
         <button class="btn" onclick="analyzeText()" id="analyzeBtn">
@@ -133,7 +175,7 @@ Bitcoin достигна нови месечни върхове днес, док
     </div>
 
     <div id="loadingMessage" class="loading" style="display: none;">
-        Анализирам текста... Моля изчакайте 5-10 секунди...
+        Анализирам текста... За дълги статии може да отнеме до 2 минути...
     </div>
 
     <div id="results" class="results">
@@ -207,27 +249,53 @@ Bitcoin достигна нови месечни върхове днес, док
                 }
             }
 
+            // Summarization информация
+            let summarizationHTML = '';
+            if (result.summarization.used) {
+                summarizationHTML = `
+                    <div class="summarization-info">
+                        <h4>📝 Информация за резюмиране</h4>
+                        <p><strong>Оригинален текст:</strong> ${result.summarization.original_words} думи</p>
+                        <p><strong>Резюме за анализ:</strong> ${result.summarization.summary_words} думи</p>
+                        <p><strong>Компресия:</strong> ${result.summarization.compression_ratio}:1</p>
+                        <p><strong>Време за резюмиране:</strong> ${result.summarization.processing_time}s</p>
+                        ${result.summarization.note ? `<p><small><em>${result.summarization.note}</em></small></p>` : ''}
+                    </div>
+                `;
+            }
+
             resultsDiv.innerHTML = `
                 <h3>📊 Резултати от анализа</h3>
 
-                <p><strong>Резюме:</strong> ${result.summary}</p>
-
-                <div style="display: flex; justify-content: space-between; margin: 20px 0;">
-                    <div>
-                        <strong>Sentiment:</strong>
-                        <span class="${sentimentClass}">${result.sentiment.label.toUpperCase()}</span>
-                        (${(result.sentiment.confidence * 100).toFixed(1)}%)
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${result.text_info.original_length}</div>
+                        <div class="stat-label">Оригинален текст (думи)</div>
                     </div>
-                    <div>
-                        <strong>Време за анализ:</strong> ${result.analysis_time}с
+                    <div class="stat-card">
+                        <div class="stat-value">${result.text_info.analyzed_length}</div>
+                        <div class="stat-label">Анализиран текст (думи)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value ${sentimentClass}">${result.sentiment.label.toUpperCase()}</div>
+                        <div class="stat-label">Sentiment (${(result.sentiment.confidence * 100).toFixed(1)}%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${Object.values(result.entities).reduce((sum, arr) => sum + arr.length, 0)}</div>
+                        <div class="stat-label">Намерени entities</div>
                     </div>
                 </div>
+
+                ${summarizationHTML}
+
+                <p><strong>Резюме:</strong> ${result.summary}</p>
 
                 <h4>🏷️ Намерени entities:</h4>
                 ${entitiesHTML || '<p style="color: #666;">Не са намерени entities.</p>'}
 
                 <div style="margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 5px; font-size: 12px; color: #666;">
-                    <strong>Информация за текста:</strong> ${result.text_info.length} символа
+                    <strong>Време за анализ:</strong> ${result.total_analysis_time}s
+                    ${result.summarization.used ? ' (включително резюмиране)' : ''}
                 </div>
             `;
 
