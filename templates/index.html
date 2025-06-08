@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Sentiment Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .sentiment-positive { color: #28a745; font-weight: bold; }
+        .sentiment-negative { color: #dc3545; font-weight: bold; }
+        .sentiment-neutral { color: #ffc107; font-weight: bold; }
+
+        .entity-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .entity-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .entity-crypto { background: #ff6b35; }
+        .entity-person { background: #4ecdc4; }
+        .entity-org { background: #45b7d1; }
+        .entity-location { background: #f9ca24; color: #333; }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Crypto Sentiment Analyzer</h1>
+        <p>Анализирай sentiment и entities в криптовалутни текстове</p>
+    </div>
+
+    <div class="input-section">
+        <h3>Въведи текст за анализ:</h3>
+        <textarea id="textInput" placeholder="Постави тук криптовалутна статия или новина за анализ...
+
+Примерен текст:
+Bitcoin достигна нови месечни върхове днес, докато институционалните инвеститори продължават да показват силен интерес. Elon Musk коментира положително развитието на пазара..."></textarea>
+
+        <br>
+        <button class="btn" onclick="analyzeText()" id="analyzeBtn">
+            🔍 Анализирай текста
+        </button>
+
+        <button class="btn" onclick="clearAll()" style="background: #6c757d; margin-left: 10px;">
+            🗑️ Изчисти
+        </button>
+    </div>
+
+    <div id="loadingMessage" class="loading" style="display: none;">
+        Анализирам текста... Моля изчакайте 5-10 секунди...
+    </div>
+
+    <div id="results" class="results">
+        <!-- Резултатите ще се покажат тук -->
+    </div>
+
+    <script>
+        async function analyzeText() {
+            const textInput = document.getElementById('textInput');
+            const text = textInput.value.trim();
+
+            if (!text) {
+                alert('Моля въведете текст за анализ!');
+                return;
+            }
+
+            // Показваме loading
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Възникна грешка при анализа');
+                }
+            } catch (error) {
+                showError('Грешка при свързване със сървъра: ' + error.message);
+            } finally {
+                // Скриваме loading
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+
+            // Sentiment цвят
+            const sentimentClass = `sentiment-${result.sentiment.label}`;
+
+            // Генерираме HTML за entities
+            let entitiesHTML = '';
+            for (const [category, entities] of Object.entries(result.entities)) {
+                if (entities.length > 0) {
+                    const categoryName = {
+                        'crypto_related': '💰 Криптовалути',
+                        'persons': '👤 Личности',
+                        'organizations': '🏢 Организации',
+                        'locations': '📍 Места',
+                        'other': '🔤 Други'
+                    }[category] || category;
+
+                    entitiesHTML += `
+                        <div class="entity-section">
+                            <strong>${categoryName}:</strong><br>
+                            ${entities.map(e => `<span class="entity-tag entity-${category.replace('_related', '').replace('s', '')}">${e.text} (${e.confidence})</span>`).join('')}
+                        </div>
+                    `;
+                }
+            }
+
+            resultsDiv.innerHTML = `
+                <h3>📊 Резултати от анализа</h3>
+
+                <p><strong>Резюме:</strong> ${result.summary}</p>
+
+                <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+                    <div>
+                        <strong>Sentiment:</strong>
+                        <span class="${sentimentClass}">${result.sentiment.label.toUpperCase()}</span>
+                        (${(result.sentiment.confidence * 100).toFixed(1)}%)
+                    </div>
+                    <div>
+                        <strong>Време за анализ:</strong> ${result.analysis_time}с
+                    </div>
+                </div>
+
+                <h4>🏷️ Намерени entities:</h4>
+                ${entitiesHTML || '<p style="color: #666;">Не са намерени entities.</p>'}
+
+                <div style="margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 5px; font-size: 12px; color: #666;">
+                    <strong>Информация за текста:</strong> ${result.text_info.length} символа
+                </div>
+            `;
+
+            resultsDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
+            resultsDiv.style.display = 'block';
+        }
+
+        function clearAll() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        // Enter за анализ (Ctrl+Enter)
+        document.getElementById('textInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeText();
+            }
+        });
+    </script>
+</body>
+</html>
