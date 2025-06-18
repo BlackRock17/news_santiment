@@ -108,6 +108,105 @@ class PostgreSQLReader:
             print(f"❌ Грешка при извличане на статистики: {e}")
             return None
 
+    def get_unanalyzed_articles(self, limit=10):
+        """
+        Връща неанализирани статии от базата данни
+
+        Args:
+            limit (int): Максимален брой статии за връщане (default: 10)
+
+        Returns:
+            list: Списък със статии в dict формат или празен списък
+        """
+        print(f"📋 Търсене на неанализирани статии (лимит: {limit})...")
+
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+                    # SQL заявка за неанализирани статии
+                    cursor.execute("""
+                        SELECT id, url, title, content, author, published_date, 
+                               content_length, scraped_at
+                        FROM articles 
+                        WHERE is_analyzed = FALSE 
+                        ORDER BY scraped_at DESC 
+                        LIMIT %s
+                    """, (limit,))
+
+                    # Превръщаме резултата в list of dictionaries
+                    articles = cursor.fetchall()
+
+                    # Конвертираме в обикновени dict-ове (по-лесно за работа)
+                    result = []
+                    for article in articles:
+                        result.append({
+                            'id': article['id'],
+                            'url': article['url'],
+                            'title': article['title'],
+                            'content': article['content'],
+                            'author': article['author'],
+                            'published_date': article['published_date'],
+                            'content_length': article['content_length'],
+                            'scraped_at': article['scraped_at']
+                        })
+
+                    print(f"✅ Намерени {len(result)} неанализирани статии")
+                    return result
+
+        except psycopg2.Error as e:
+            print(f"❌ Грешка при четене на статии: {e}")
+            return []
+        except Exception as e:
+            print(f"❌ Неочаквана грешка: {e}")
+            return []
+
+    def mark_article_as_analyzed(self, article_id, analysis_summary=None):
+        """
+        Маркира статия като анализирана в базата данни
+
+        Args:
+            article_id (int): ID на статията за маркиране
+            analysis_summary (str, optional): Кратко резюме на анализа
+
+        Returns:
+            bool: True ако успешно, False ако има грешка
+        """
+        print(f"✅ Маркиране на статия ID:{article_id} като анализирана...")
+
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Първо проверяваме дали статията съществува
+                    cursor.execute("SELECT title FROM articles WHERE id = %s", (article_id,))
+                    article = cursor.fetchone()
+
+                    if not article:
+                        print(f"❌ Статия с ID:{article_id} не съществува")
+                        return False
+
+                    # UPDATE заявка за маркиране като анализирана
+                    cursor.execute("""
+                        UPDATE articles 
+                        SET is_analyzed = TRUE
+                        WHERE id = %s
+                    """, (article_id,))
+
+                    # Проверяваме дали UPDATE-а е успешен
+                    if cursor.rowcount == 1:
+                        conn.commit()  # Запазваме промените
+                        print(f"✅ Статия ID:{article_id} маркирана като анализирана")
+                        return True
+                    else:
+                        print(f"⚠️ Статия ID:{article_id} не беше обновена")
+                        return False
+
+        except psycopg2.Error as e:
+            print(f"❌ Грешка при маркиране на статия: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Неочаквана грешка: {e}")
+            return False
+
     def test_database_access(self):
         """
         Тестова функция - показва няколко статии от базата
@@ -157,6 +256,54 @@ class PostgreSQLReader:
             print(f"\n❌ Database тест неуспешен: {e}")
             return False
 
+    def test_full_workflow(self):
+        """
+        Тества пълния workflow: четене -> "анализ" -> маркиране
+        ВНИМАНИЕ: Това е само тест, не прави истински анализ!
+        """
+        print("\n🔄 ТЕСТ НА ПЪЛЕН WORKFLOW")
+        print("=" * 40)
+
+        try:
+            # Стъпка 1: Вземаме 1 неанализирана статия
+            articles = self.get_unanalyzed_articles(limit=1)
+
+            if not articles:
+                print("📋 Няма неанализирани статии за тест")
+                return False
+
+            article = articles[0]
+            print(f"\n📄 Избрана статия за тест:")
+            print(f"   ID: {article['id']}")
+            print(f"   Заглавие: {article['title'][:60]}...")
+            print(f"   Дължина: {article['content_length']} символа")
+
+            # Стъпка 2: "Симулираме" анализ (без да правим истински анализ)
+            print(f"\n🤖 Симулиране на AI анализ...")
+            print(f"   📝 Анализиране на съдържанието...")
+            print(f"   🔍 Извличане на entities...")
+            print(f"   📊 Изчисляване на sentiment...")
+
+            # Стъпка 3: Маркираме като анализирана
+            success = self.mark_article_as_analyzed(article['id'])
+
+            if success:
+                # Стъпка 4: Проверяваме дали наистина е маркирана
+                updated_stats = self.get_database_stats()
+                print(f"\n📊 Обновени статистики:")
+                print(f"   ⏳ Неанализирани: {updated_stats['unanalyzed_articles']}")
+                print(f"   ✅ Анализирани: {updated_stats['analyzed_articles']}")
+
+                print(f"\n🎉 Пълен workflow тест УСПЕШЕН!")
+                return True
+            else:
+                print(f"\n❌ Пълен workflow тест НЕУСПЕШЕН")
+                return False
+
+        except Exception as e:
+            print(f"\n❌ Грешка в workflow тест: {e}")
+            return False
+
 
 # Тестова функция за проверка
 def main():
@@ -169,16 +316,48 @@ def main():
         # Създаваме reader
         reader = PostgreSQLReader()
 
-        # Тестваме функционалността
-        success = reader.test_database_access()
+        # Основен тест
+        basic_success = reader.test_database_access()
 
-        if success:
-            print("\n🎉 PostgreSQL Reader работи отлично!")
-            print("\n💡 Следващи стъпки:")
-            print("   1. Добавяне на метод get_unanalyzed_articles()")
-            print("   2. Добавяне на метод mark_article_as_analyzed()")
+        if not basic_success:
+            print("\n❌ Основният тест се провали")
+            return
+
+        # Тестваме новите методи
+        print("\n" + "=" * 50)
+        print("🧪 ТЕСТВАНЕ НА НОВИТЕ МЕТОДИ")
+        print("=" * 50)
+
+        # Тест 1: get_unanalyzed_articles()
+        print("\n1️⃣ ТЕСТ: get_unanalyzed_articles()")
+        articles = reader.get_unanalyzed_articles(limit=2)
+
+        if articles:
+            print(f"✅ Намерени {len(articles)} неанализирани статии:")
+            for i, article in enumerate(articles, 1):
+                print(f"   {i}. ID:{article['id']} - {article['title'][:50]}...")
         else:
-            print("\n❌ Има проблеми с PostgreSQL Reader")
+            print("📋 Няма неанализирани статии")
+
+        # Тест 2: Пълен workflow (само ако има неанализирани статии)
+        if articles:
+            print(f"\n2️⃣ ТЕСТ: Пълен workflow")
+            workflow_success = reader.test_full_workflow()
+
+            if workflow_success:
+                print("\n🎉 Всички тестове УСПЕШНИ!")
+                print("\n💡 PostgreSQL Reader е готов за интеграция с AI анализа!")
+                print("\n🚀 Следващи стъпки:")
+                print("   1. Интеграция с crypto_analyzer.py")
+                print("   2. Създаване на analysis workflow")
+                print("   3. Настройка на база данни 'Б' за резултати")
+            else:
+                print("\n❌ Workflow тест неуспешен")
+        else:
+            print(f"\n⏭️ Прескачам workflow тест (няма неанализирани статии)")
+            print("\n💡 За да тестваш workflow:")
+            print("   1. Добави нови статии със scraper-а")
+            print("   2. Стартирай отново postgres_reader.py")
 
     except Exception as e:
         print(f"\n❌ Критична грешка: {e}")
