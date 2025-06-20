@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 30px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .navbar-brand, .nav-link {
+            color: white !important;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
+
+        .file-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            margin: -25px -25px 20px -25px;
+        }
+
+        .file-meta {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .preview-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .sentiment-positive { color: #28a745; font-weight: bold; }
+        .sentiment-negative { color: #dc3545; font-weight: bold; }
+        .sentiment-neutral { color: #ffc107; font-weight: bold; }
+
+        .btn-custom {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 8px 20px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-brain me-2"></i>AI Analysis Dashboard
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('analysis_page') }}">
+                            <i class="fas fa-cogs me-1"></i>Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('results_page') }}">
+                            <i class="fas fa-chart-line me-1"></i>Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('settings_page') }}">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="display-4 mb-0">
+                        <i class="fas fa-chart-line text-primary me-3"></i>
+                        Analysis Results
+                    </h1>
+                    <p class="lead text-muted">Преглед на резултати от AI анализи</p>
+                </div>
+            </div>
+
+            {% if result_files %}
+                <!-- Results Files -->
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="mb-3">
+                            <i class="fas fa-folder-open me-2"></i>
+                            Резултати файлове ({{ result_files|length }})
+                        </h4>
+                    </div>
+                </div>
+
+                {% for file in result_files %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="result-card">
+                                <div class="file-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-file-alt me-2"></i>
+                                                {{ file.filename }}
+                                            </h5>
+                                            <small>{{ file.modified }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-light text-dark me-2">{{ file.size_kb }} KB</span>
+                                            <span class="badge bg-light text-dark">{{ file.article_count }} статии</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6>Преглед на резултати:</h6>
+                                        {% if file.preview %}
+                                            {% for result in file.preview %}
+                                                <div class="preview-item">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h6 class="mb-1">
+                                                            {{ result.metadata.article_title[:60] }}{% if result.metadata.article_title|length > 60 %}...{% endif %}
+                                                        </h6>
+                                                        <span class="sentiment-{{ result.sentiment.label }}">
+                                                            {{ result.sentiment.label.upper() }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <small class="text-muted">
+                                                                <strong>Confidence:</strong> {{ "%.1f"|format(result.sentiment.confidence * 100) }}%
+                                                            </small>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <small class="text-muted">
+                                                                <strong>Entities:</strong>
+                                                                {% set total_entities = result.entities.values() | map('length') | sum %}
+                                                                {{ total_entities }} намерени
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">{{ result.summary[:100] }}...</small>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+
+                                            {% if file.article_count > 2 %}
+                                                <div class="text-center">
+                                                    <small class="text-muted">
+                                                        ... и още {{ file.article_count - 2 }} резултата
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <p class="text-muted">Няма данни за преглед</p>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="file-meta">
+                                            <h6>Файл информация:</h6>
+                                            <p class="mb-1">
+                                                <i class="fas fa-clock me-1"></i>
+                                                <strong>Създаден:</strong> {{ file.modified }}
+                                            </p>
+                                            <p class="mb-1">
+                                                <i class="fas fa-weight me-1"></i>
+                                                <strong>Размер:</strong> {{ file.size_kb }} KB
+                                            </p>
+                                            <p class="mb-3">
+                                                <i class="fas fa-list me-1"></i>
+                                                <strong>Статии:</strong> {{ file.article_count }}
+                                            </p>
+
+                                            <a href="{{ url_for('view_result', filename=file.filename) }}"
+                                               class="btn btn-primary btn-custom w-100 mb-2">
+                                                <i class="fas fa-eye me-1"></i>Детайлен преглед
+                                            </a>
+
+                                            <button class="btn btn-outline-secondary btn-custom w-100"
+                                                    onclick="downloadFile('{{ file.filename }}')">
+                                                <i class="fas fa-download me-1"></i>Изтегли JSON
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="result-card">
+                            <div class="empty-state">
+                                <i class="fas fa-chart-line"></i>
+                                <h3>Няма анализирани резултати</h3>
+                                <p class="mb-4">
+                                    Още не са направени анализи или резултатите не са запазени в JSON файлове.
+                                </p>
+                                <a href="{{ url_for('analysis_page') }}" class="btn btn-primary btn-custom">
+                                    <i class="fas fa-rocket me-2"></i>Стартирай първия анализ
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Help Section -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="result-card">
+                        <h5><i class="fas fa-question-circle text-info me-2"></i>Как да използвам резултатите?</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>JSON файловете съдържат:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Sentiment анализ с confidence scores</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Извлечени entities (лица, организации, криптовалути)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Резюмета на статиите</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Метаданни и времеви печати</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Можете да:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Изтегляте JSON файловете за допълнителен анализ</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Импортирате ги в Excel или други инструменти</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Създавате визуализации и отчети</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Проследявате sentiment trends през време</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function downloadFile(filename) {
+            // Създаваме временен link за изтегляне
+            const link = document.createElement('a');
+            link.href = filename;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
