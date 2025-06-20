@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - AI Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1000px;
+            padding: 30px;
+        }
+
+        .settings-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .navbar-brand, .nav-link {
+            color: white !important;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
+
+        .setting-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .setting-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-brain me-2"></i>AI Analysis Dashboard
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('analysis_page') }}">
+                            <i class="fas fa-cogs me-1"></i>Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('results_page') }}">
+                            <i class="fas fa-chart-line me-1"></i>Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('settings_page') }}">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="display-4 mb-0">
+                        <i class="fas fa-cog text-primary me-3"></i>
+                        Settings
+                    </h1>
+                    <p class="lead text-muted">Настройки на AI анализ системата</p>
+                </div>
+            </div>
+
+            <!-- AI Models Info -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-robot text-info me-2"></i>AI Модели</h4>
+                        <p class="text-muted">Информация за заредените machine learning модели</p>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6><i class="fas fa-heart text-success me-2"></i>Sentiment Analysis</h6>
+                                    <div class="setting-value text-success">FinBERT</div>
+                                    <small class="text-muted">ProsusAI/finbert - Специализиран за финансови текстове</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6><i class="fas fa-tags text-warning me-2"></i>Entity Recognition</h6>
+                                    <div class="setting-value text-warning">BERT NER</div>
+                                    <small class="text-muted">dbmdz/bert-large-cased-finetuned-conll03-english</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6><i class="fas fa-compress text-info me-2"></i>Text Summarization</h6>
+                                    <div class="setting-value text-info">BART</div>
+                                    <small class="text-muted">facebook/bart-large-cnn - Neural summarization</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summarization Settings -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-compress-alt text-primary me-2"></i>Summarization настройки</h4>
+                        <p class="text-muted">Параметри за автоматично резюмиране на текстове</p>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6>Минимум думи за резюме</h6>
+                                    <div class="setting-value">{{ settings.summarization_threshold }}</div>
+                                    <small class="text-muted">Статии под тази граница се анализират директно</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6>Максимум входящи думи</h6>
+                                    <div class="setting-value">{{ settings.max_input_words }}</div>
+                                    <small class="text-muted">Лимит за BART модела</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="setting-item">
+                                    <h6>Цел за резюме</h6>
+                                    <div class="setting-value">{{ settings.target_summary_words }}</div>
+                                    <small class="text-muted">Желана дължина на резюмето</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <h6><i class="fas fa-lightbulb text-warning me-2"></i>Как работи:</h6>
+                            <ul class="mb-0">
+                                <li>Статии под {{ settings.summarization_threshold }} думи → директен sentiment анализ</li>
+                                <li>Статии над {{ settings.summarization_threshold }} думи → BART резюме → sentiment анализ</li>
+                                <li>Entity recognition винаги работи с оригиналния текст</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Connection -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-database text-success me-2"></i>База данни връзка</h4>
+                        <p class="text-muted">Информация за PostgreSQL връзката</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="setting-item">
+                                    <h6>Database</h6>
+                                    <div class="setting-value text-success">crypto_news</div>
+                                    <small class="text-muted">PostgreSQL база данни</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="setting-item">
+                                    <h6>Host</h6>
+                                    <div class="setting-value text-success">localhost:5432</div>
+                                    <small class="text-muted">Локален PostgreSQL сървър</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-info-circle text-info me-2"></i>Системна информация</h4>
+                        <p class="text-muted">Техническа информация за AI системата</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Производителност:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-clock text-primary me-2"></i>Кратки статии: ~5-15 секунди</li>
+                                    <li><i class="fas fa-clock text-warning me-2"></i>Дълги статии: ~90-120 секунди</li>
+                                    <li><i class="fas fa-microchip text-info me-2"></i>Използва CPU (не изисква GPU)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Възможности:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>3 sentiment класа (positive/negative/neutral)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>5 entity категории</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Автоматично резюмиране</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>JSON export на резултати</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Забележки:</h6>
+                            <ul class="mb-0">
+                                <li>Настройките са read-only - не могат да се променят от UI</li>
+                                <li>За промяна на параметрите редактирайте <code>text_summarizer.py</code></li>
+                                <li>Моделите се зареждат при стартиране на приложението</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Endpoints -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="settings-card">
+                        <h4><i class="fas fa-plug text-purple me-2"></i>API Endpoints</h4>
+                        <p class="text-muted">Достъпни API endpoints за интеграция</p>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Endpoint</th>
+                                        <th>Method</th>
+                                        <th>Описание</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>/health</code></td>
+                                        <td><span class="badge bg-success">GET</span></td>
+                                        <td>Health check - състояние на системата</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>/api/analysis_status</code></td>
+                                        <td><span class="badge bg-success">GET</span></td>
+                                        <td>JSON статус на текущия анализ</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>/start_analysis</code></td>
+                                        <td><span class="badge bg-primary">POST</span></td>
+                                        <td>Стартиране на нов анализ</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back to Dashboard -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg" style="border-radius: 10px; padding: 15px 30px;">
+                        <i class="fas fa-home me-2"></i>Обратно към Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
