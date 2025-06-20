@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            opacity: 0.7;
+            margin-bottom: 15px;
+        }
+
+        .text-analyzed { color: #28a745; }
+        .text-unanalyzed { color: #ffc107; }
+        .text-total { color: #007bff; }
+        .text-progress { color: #6f42c1; }
+
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            font-weight: 500;
+        }
+
+        .btn-custom {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 12px 25px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .article-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+        }
+
+        .article-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-brain me-2"></i>AI Analysis Dashboard
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('analysis_page') }}">
+                            <i class="fas fa-cogs me-1"></i>Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('results_page') }}">
+                            <i class="fas fa-chart-line me-1"></i>Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('settings_page') }}">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-custom alert-dismissible fade show" role="alert">
+                            <strong>
+                                {% if category == 'error' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Грешка!
+                                {% elif category == 'info' %}
+                                    <i class="fas fa-info-circle me-2"></i>Информация:
+                                {% elif category == 'warning' %}
+                                    <i class="fas fa-exclamation-circle me-2"></i>Внимание:
+                                {% else %}
+                                    <i class="fas fa-check-circle me-2"></i>Успех:
+                                {% endif %}
+                            </strong>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="display-4 mb-0">
+                        <i class="fas fa-brain text-primary me-3"></i>
+                        AI Analysis Dashboard
+                    </h1>
+                    <p class="lead text-muted">Crypto News Sentiment Analysis & Entity Recognition</p>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-icon text-total">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="stat-number text-total">{{ stats.total_articles or 0 }}</div>
+                        <div class="stat-label">Общо статии</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-icon text-analyzed">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-number text-analyzed">{{ stats.analyzed_articles or 0 }}</div>
+                        <div class="stat-label">Анализирани</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-icon text-unanalyzed">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="stat-number text-unanalyzed">{{ stats.unanalyzed_articles or 0 }}</div>
+                        <div class="stat-label">За анализ</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-icon text-progress">
+                            <i class="fas fa-{{ 'spinner fa-spin' if stats.analysis_in_progress else 'pause' }}"></i>
+                        </div>
+                        <div class="stat-number text-progress">
+                            {{ 'АКТИВЕН' if stats.analysis_in_progress else 'СПРЯН' }}
+                        </div>
+                        <div class="stat-label">Статус анализ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Status -->
+            {% if stats.analysis_in_progress %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-info alert-custom d-flex align-items-center">
+                            <div class="spinner-border text-info me-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div>
+                                <strong>Анализ в ход...</strong><br>
+                                <small>Моля изчакайте. Анализът може да отнеме няколко минути в зависимост от броя статии.</small>
+                            </div>
+                            <a href="{{ url_for('analysis_status') }}" class="btn btn-outline-info btn-sm ms-auto">
+                                <i class="fas fa-eye me-1"></i>Виж статус
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h3 class="mb-3"><i class="fas fa-bolt me-2"></i>Бързи действия</h3>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5><i class="fas fa-play-circle text-success me-2"></i>Стартирай анализ</h5>
+                        <p class="text-muted">Анализирай неанализирани статии с AI модели</p>
+                        <a href="{{ url_for('analysis_page') }}" class="btn btn-success btn-custom">
+                            <i class="fas fa-rocket me-2"></i>Управление на анализ
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5><i class="fas fa-chart-bar text-primary me-2"></i>Виж резултати</h5>
+                        <p class="text-muted">Прегледай резултати от предишни анализи</p>
+                        <a href="{{ url_for('results_page') }}" class="btn btn-primary btn-custom">
+                            <i class="fas fa-chart-line me-2"></i>Преглед резултати
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Articles Preview -->
+            {% if unanalyzed_preview %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">
+                            <i class="fas fa-list me-2"></i>Следващи статии за анализ
+                        </h3>
+                        {% for article in unanalyzed_preview %}
+                            <div class="article-preview">
+                                <h6 class="mb-1">{{ article.title }}</h6>
+                                <div class="article-meta">
+                                    <span class="badge bg-primary me-2">ID: {{ article.id }}</span>
+                                    <span class="me-3">
+                                        <i class="fas fa-calendar me-1"></i>{{ article.scraped_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </span>
+                                    <span class="me-3">
+                                        <i class="fas fa-file-text me-1"></i>{{ article.content_length }} символа
+                                    </span>
+                                    {% if article.author %}
+                                        <span>
+                                            <i class="fas fa-user me-1"></i>{{ article.author }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        {% if stats.unanalyzed_articles > 5 %}
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    ... и още {{ stats.unanalyzed_articles - 5 }} статии
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- System Info -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="stat-card">
+                        <h5><i class="fas fa-info-circle text-info me-2"></i>Системна информация</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <strong>Най-нова статия:</strong>
+                                    {% if stats.latest_article %}
+                                        {{ stats.latest_article[0][:50] }}...
+                                        <br><small class="text-muted">{{ stats.latest_article[1] }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Няма статии</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <strong>Последен анализ:</strong>
+                                    <span class="text-muted">{{ stats.last_analysis }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Auto-refresh ако има анализ в ход -->
+    {% if stats.analysis_in_progress %}
+        <script>
+            setTimeout(function() {
+                location.reload();
+            }, 10000); // Refresh на всеки 10 секунди
+        </script>
+    {% endif %}
+</body>
+</html>
