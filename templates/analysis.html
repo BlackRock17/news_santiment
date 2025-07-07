@@ -19,7 +19,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             margin: 20px auto;
-            max-width: 1200px;
+            max-width: 1000px;
             padding: 30px;
         }
 
@@ -71,40 +71,6 @@
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
 
-        .article-item {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-left: 4px solid #007bff;
-            transition: all 0.3s ease;
-        }
-
-        .article-item:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
-        }
-
-        .article-meta {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        .progress-ring {
-            width: 60px;
-            height: 60px;
-        }
-
-        .stat-badge {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: bold;
-            display: inline-block;
-            margin: 5px;
-        }
-
         .analysis-form {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
@@ -116,6 +82,16 @@
         .analysis-form .form-select {
             background: rgba(255,255,255,0.9);
             border: none;
+        }
+
+        .stat-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 5px;
         }
 
         .alert-custom {
@@ -132,32 +108,19 @@
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-brain me-2"></i>AI Analysis Dashboard
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-home me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('analysis_page') }}">
-                            <i class="fas fa-cogs me-1"></i>Analysis
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('results_page') }}">
-                            <i class="fas fa-chart-line me-1"></i>Results
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('settings_page') }}">
-                            <i class="fas fa-cog me-1"></i>Settings
-                        </a>
-                    </li>
-                </ul>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link active" href="{{ url_for('analysis_page') }}">
+                    <i class="fas fa-cogs me-1"></i>Analysis
+                </a>
+                <a class="nav-link" href="{{ url_for('results_page') }}">
+                    <i class="fas fa-chart-line me-1"></i>Results
+                </a>
+                <a class="nav-link" href="{{ url_for('settings_page') }}">
+                    <i class="fas fa-cog me-1"></i>Settings
+                </a>
             </div>
         </div>
     </nav>
@@ -194,7 +157,7 @@
                         <i class="fas fa-cogs text-primary me-3"></i>
                         Analysis Control
                     </h1>
-                    <p class="lead text-muted">Управление на AI анализ на криптовалутни новини</p>
+                    <p class="lead text-muted">Управление на AI анализ (опростена версия - без real-time updates)</p>
                 </div>
             </div>
 
@@ -213,115 +176,91 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="stat-badge" style="background: linear-gradient(135deg, #6f42c1, #e83e8c);">
-                        <i class="fas fa-{{ 'spinner fa-spin' if analysis_in_progress else 'pause' }} me-2"></i>
-                        {{ 'АКТИВЕН' if analysis_in_progress else 'ГОТОВ' }}
+                    <div class="stat-badge" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                        <i class="fas fa-check-circle me-2"></i>
+                        {{ stats.analyzed_articles or 0 }} Анализирани
                     </div>
                 </div>
             </div>
 
             <!-- Analysis Form -->
-            {% if not analysis_in_progress %}
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="analysis-form">
-                            <h3 class="mb-4">
-                                <i class="fas fa-rocket me-2"></i>
-                                Стартирай AI анализ
-                            </h3>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="analysis-form">
+                        <h3 class="mb-4">
+                            <i class="fas fa-rocket me-2"></i>
+                            Стартирай AI анализ
+                        </h3>
 
-                            {% if stats.unanalyzed_articles > 0 %}
-                                <form method="POST" action="{{ url_for('start_analysis') }}">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="limit" class="form-label">
-                                                    <i class="fas fa-hashtag me-1"></i>
-                                                    Брой статии за анализ
-                                                </label>
-                                                <select class="form-select" name="limit" id="limit" required>
-                                                    <option value="1">1 статия (тест)</option>
-                                                    <option value="3">3 статии</option>
-                                                    <option value="5" selected>5 статии</option>
-                                                    <option value="10">10 статии</option>
-                                                    <option value="20">20 статии</option>
-                                                    <option value="{{ stats.unanalyzed_articles }}">
-                                                        Всички ({{ stats.unanalyzed_articles }})
-                                                    </option>
-                                                </select>
-                                                <div class="form-text text-light">
-                                                    Препоръчваме да започнете с малко количество за тест
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">
-                                                    <i class="fas fa-save me-1"></i>
-                                                    Опции
-                                                </label>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="save_results"
-                                                           id="save_results" checked>
-                                                    <label class="form-check-label text-light" for="save_results">
-                                                        Запази резултатите в JSON файл
-                                                    </label>
-                                                </div>
-                                                <div class="form-text text-light">
-                                                    Резултатите ще бъдат запазени за по-късен преглед
-                                                </div>
+                        {% if stats.unanalyzed_articles > 0 %}
+                            <form method="POST" action="{{ url_for('start_analysis') }}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="limit" class="form-label">
+                                                <i class="fas fa-hashtag me-1"></i>
+                                                Брой статии за анализ
+                                            </label>
+                                            <select class="form-select" name="limit" id="limit" required>
+                                                <option value="1">1 статия (тест - ~2 мин)</option>
+                                                <option value="2">2 статии (~3 мин)</option>
+                                                <option value="3" selected>3 статии (~4 мин)</option>
+                                                <option value="5">5 статии (~6 мин)</option>
+                                                <option value="10">10 статии (~12 мин)</option>
+                                                <option value="{{ stats.unanalyzed_articles }}">
+                                                    Всички ({{ stats.unanalyzed_articles }})
+                                                </option>
+                                            </select>
+                                            <div class="form-text text-light">
+                                                Препоръчвам да започнеш с малко количество
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <button type="submit" class="btn btn-light btn-custom btn-lg">
-                                                <i class="fas fa-play me-2"></i>
-                                                Стартирай анализ
-                                            </button>
-                                            <div class="mt-3">
-                                                <small class="text-light">
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    Анализът ще отнеме приблизително 1-2 минути на статия
-                                                </small>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-save me-1"></i>
+                                                Опции
+                                            </label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="save_results"
+                                                       id="save_results" checked>
+                                                <label class="form-check-label text-light" for="save_results">
+                                                    Запази резултатите в JSON файл
+                                                </label>
+                                            </div>
+                                            <div class="form-text text-light">
+                                                Препоръчвам да запазваш резултатите
                                             </div>
                                         </div>
                                     </div>
-                                </form>
-                            {% else %}
-                                <div class="alert alert-warning">
-                                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Няма статии за анализ</h5>
-                                    <p>Всички статии в базата данни са вече анализирани.</p>
-                                    <p class="mb-0">Добавете нови статии чрез scraping проекта за да продължите анализа.</p>
                                 </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="control-card">
-                            <div class="alert alert-info d-flex align-items-center">
-                                <div class="spinner-border text-info me-3" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-light btn-custom btn-lg">
+                                            <i class="fas fa-play me-2"></i>
+                                            Стартирай анализ
+                                        </button>
+                                        <div class="mt-3">
+                                            <small class="text-light">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Анализът ще отнеме време. Ще те пренасочи към loading страница.
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h5 class="alert-heading mb-1">Анализ в ход...</h5>
-                                    <p class="mb-0">
-                                        Моля изчакайте докато анализът завърши.
-                                        Процесът може да отнеме няколко минути.
-                                    </p>
-                                </div>
-                                <a href="{{ url_for('analysis_status') }}" class="btn btn-outline-info btn-sm ms-auto">
-                                    <i class="fas fa-eye me-1"></i>Виж статус
-                                </a>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i>Няма статии за анализ</h5>
+                                <p>Всички статии в базата данни са вече анализирани.</p>
+                                <p class="mb-0">Добавете нови статии чрез scraping проекта за да продължите анализа.</p>
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
-            {% endif %}
+            </div>
 
             <!-- Articles Preview -->
             {% if unanalyzed_articles %}
@@ -330,7 +269,7 @@
                         <div class="control-card">
                             <h4 class="mb-3">
                                 <i class="fas fa-list me-2"></i>
-                                Статии за анализ ({{ unanalyzed_articles|length }} от {{ stats.unanalyzed_articles }})
+                                Статии за анализ (първи {{ unanalyzed_articles|length }} от {{ stats.unanalyzed_articles }})
                             </h4>
 
                             <div class="table-responsive">
@@ -367,14 +306,6 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            {% if stats.unanalyzed_articles > 20 %}
-                                <div class="text-center mt-3">
-                                    <small class="text-muted">
-                                        ... и още {{ stats.unanalyzed_articles - 20 }} статии
-                                    </small>
-                                </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -395,14 +326,21 @@
                                 </ul>
                             </div>
                             <div class="col-md-6">
-                                <h6>Анализ процес:</h6>
+                                <h6>Опростена версия:</h6>
                                 <ul class="list-unstyled">
-                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Автоматично резюмиране (ако е нужно)</li>
-                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Sentiment анализ (positive/negative/neutral)</li>
-                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Entity извличане (лица, организации, криптовалути)</li>
-                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Запазване на резултатите</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Sync анализ (без threading)</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Прост workflow без real-time updates</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Optimized за персонално използване</li>
+                                    <li><i class="fas fa-arrow-right text-primary me-2"></i>Никакъв spam в терминала</li>
                                 </ul>
                             </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Важно:</strong> Тази версия е опростена за персонално използване.
+                            Няма real-time updates или background processing. Анализът се прави sync
+                            и browser-ът ще изглежда "замръзнал" докато AI модели работят.
                         </div>
                     </div>
                 </div>
@@ -411,14 +349,5 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Auto-refresh ако има анализ в ход -->
-    {% if analysis_in_progress %}
-        <script>
-            setTimeout(function() {
-                location.reload();
-            }, 5000); // Refresh на всеки 5 секунди
-        </script>
-    {% endif %}
 </body>
 </html>
