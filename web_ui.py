@@ -143,7 +143,55 @@ def results_page():
 
     except Exception as e:
         flash(f"Грешка при зареждане на резултати: {str(e)}", 'error')
-        return redirect(url_for('dashboard'))
+        return render_template('results.html', result_files=[])
+
+
+@app.route('/view_result/<filename>')
+def view_result(filename):
+    """Показва детайли за конкретен резултат файл"""
+    try:
+        # Валидация на filename за сигурност
+        if not filename.startswith('analysis_results_') or not filename.endswith('.json'):
+            flash('Невалиден файл.', 'error')
+            return redirect(url_for('results_page'))
+
+        if not os.path.exists(filename):
+            flash('Файлът не съществува.', 'error')
+            return redirect(url_for('results_page'))
+
+        # Четем данните
+        import json
+        with open(filename, 'r', encoding='utf-8') as f:
+            results_data = json.load(f)
+
+        # Статистики
+        total_results = len(results_data) if isinstance(results_data, list) else 0
+
+        sentiment_stats = {}
+        entity_stats = {}
+
+        if isinstance(results_data, list):
+            for result in results_data:
+                # Sentiment статистики
+                sentiment = result.get('sentiment', {}).get('label', 'unknown')
+                sentiment_stats[sentiment] = sentiment_stats.get(sentiment, 0) + 1
+
+                # Entity статистики
+                entities = result.get('entities', {})
+                for category, entity_list in entities.items():
+                    if entity_list:
+                        entity_stats[category] = entity_stats.get(category, 0) + len(entity_list)
+
+        return render_template('view_result.html',
+                               filename=filename,
+                               results_data=results_data,
+                               total_results=total_results,
+                               sentiment_stats=sentiment_stats,
+                               entity_stats=entity_stats)
+
+    except Exception as e:
+        flash(f"Грешка при четене на файл: {str(e)}", 'error')
+        return redirect(url_for('results_page'))
 
 
 @app.route('/settings')
