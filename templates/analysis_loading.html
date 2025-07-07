@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis Running...</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 60px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .spinner {
+            font-size: 4rem;
+            animation: spin 2s linear infinite;
+            margin-bottom: 30px;
+            color: #667eea;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 30px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            animation: progress 300s linear forwards;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .countdown {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .step-icon {
+            margin-right: 15px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="spinner">
+            <i class="fas fa-robot"></i>
+        </div>
+
+        <h1 class="display-5 mb-3">AI Analysis Running</h1>
+        <p class="lead text-muted">
+            Анализирам {{ limit }} статии с AI модели...
+        </p>
+
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+
+        <div class="countdown" id="countdown">
+            Стартиране след <span id="timer">5</span> секунди...
+        </div>
+
+        <div class="info-box">
+            <h6><i class="fas fa-info-circle me-2"></i>Какво се случва:</h6>
+
+            <div class="step">
+                <i class="fas fa-database step-icon"></i>
+                <span>Зареждане на AI модели (FinBERT, BERT NER, BART)</span>
+            </div>
+
+            <div class="step">
+                <i class="fas fa-brain step-icon"></i>
+                <span>Анализ на sentiment за всяка статия</span>
+            </div>
+
+            <div class="step">
+                <i class="fas fa-tags step-icon"></i>
+                <span>Извличане на entities (лица, организации, криптовалути)</span>
+            </div>
+
+            <div class="step">
+                <i class="fas fa-compress step-icon"></i>
+                <span>Автоматично summarization на дълги текстове</span>
+            </div>
+
+            <div class="step">
+                <i class="fas fa-save step-icon"></i>
+                <span>Запазване на резултатите в JSON файл</span>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h6><i class="fas fa-clock me-2"></i>Очаквано време:</h6>
+            <p class="text-muted">
+                {% if limit == 1 %}
+                    Около 2 минути за 1 статия
+                {% elif limit <= 3 %}
+                    Около 3-4 минути за {{ limit }} статии
+                {% elif limit <= 5 %}
+                    Около 5-6 минути за {{ limit }} статии
+                {% else %}
+                    Около {{ (limit * 1.2)|round|int }} минути за {{ limit }} статии
+                {% endif %}
+            </p>
+
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Важно:</strong> Не затваряй този tab докато анализът не завърши!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Countdown timer
+        let timeLeft = 5;
+        const timerElement = document.getElementById('timer');
+        const countdownElement = document.getElementById('countdown');
+
+        const countdown = setInterval(function() {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                countdownElement.innerHTML = '<i class="fas fa-rocket me-2"></i>Стартиране на анализ...';
+
+                // След 5 секунди стартирай анализа
+                setTimeout(function() {
+                    window.location = '/run_analysis/{{ limit }}/{{ save_results|lower }}';
+                }, 1000);
+            }
+        }, 1000);
+
+        // Prevent accidental page close
+        window.addEventListener('beforeunload', function(e) {
+            const confirmationMessage = 'AI анализ ще започне скоро. Сигурен ли си че искаш да затвориш страницата?';
+            e.returnValue = confirmationMessage;
+            return confirmationMessage;
+        });
+    </script>
+</body>
+</html>
