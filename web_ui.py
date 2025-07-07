@@ -150,22 +150,32 @@ def results_page():
 def view_result(filename):
     """Показва детайли за конкретен резултат файл"""
     try:
+        print(f"🔍 Trying to view result file: {filename}")
+        print(f"📂 Current directory files: {os.listdir('.')}")
+
         # Валидация на filename за сигурност
         if not filename.startswith('analysis_results_') or not filename.endswith('.json'):
+            print(f"❌ Invalid filename format: {filename}")
             flash('Невалиден файл.', 'error')
             return redirect(url_for('results_page'))
 
         if not os.path.exists(filename):
+            print(f"❌ File does not exist: {filename}")
             flash('Файлът не съществува.', 'error')
             return redirect(url_for('results_page'))
+
+        print(f"✅ File exists, reading: {filename}")
 
         # Четем данните
         import json
         with open(filename, 'r', encoding='utf-8') as f:
             results_data = json.load(f)
 
+        print(f"✅ JSON loaded successfully, data type: {type(results_data)}")
+
         # Статистики
         total_results = len(results_data) if isinstance(results_data, list) else 0
+        print(f"📊 Total results: {total_results}")
 
         sentiment_stats = {}
         entity_stats = {}
@@ -182,6 +192,10 @@ def view_result(filename):
                     if entity_list:
                         entity_stats[category] = entity_stats.get(category, 0) + len(entity_list)
 
+        print(f"📈 Sentiment stats: {sentiment_stats}")
+        print(f"🏷️ Entity stats: {entity_stats}")
+        print(f"✅ Rendering view_result.html template")
+
         return render_template('view_result.html',
                                filename=filename,
                                results_data=results_data,
@@ -190,6 +204,8 @@ def view_result(filename):
                                entity_stats=entity_stats)
 
     except Exception as e:
+        print(f"❌ Error in view_result: {str(e)}")
+        print(f"❌ Exception type: {type(e)}")
         flash(f"Грешка при четене на файл: {str(e)}", 'error')
         return redirect(url_for('results_page'))
 
